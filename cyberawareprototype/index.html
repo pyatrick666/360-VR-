@@ -281,7 +281,7 @@
 <script>
 (function(){
 
-  // Audio cues reused from the original training project.
+  // Reliable sound controls: preload separate clips so one cue does not cancel another.
   var soundEnabled = true;
   var soundFiles = {
     click: '../sounds/click.mp3',
@@ -291,25 +291,40 @@
     submit: '../sounds/submit.mp3',
     unlock: '../sounds/unlock.mp3'
   };
-  var activeAudio = null;
+  var audioClips = {};
+  Object.keys(soundFiles).forEach(function(name) {
+    var audio = new Audio(new URL(soundFiles[name], document.baseURI).href);
+    audio.preload = 'auto';
+    audio.volume = 0.7;
+    audioClips[name] = audio;
+  });
   function playSound(name) {
-    if (!soundEnabled || !soundFiles[name]) return;
+    if (!soundEnabled || !audioClips[name]) return;
     try {
-      if (activeAudio) { activeAudio.pause(); activeAudio.currentTime = 0; }
-      activeAudio = new Audio(soundFiles[name]);
-      activeAudio.volume = 0.65;
-      var playback = activeAudio.play();
+      var clip = audioClips[name].cloneNode();
+      clip.volume = 0.7;
+      var playback = clip.play();
       if (playback && playback.catch) playback.catch(function() {});
     } catch (e) {}
   }
   var soundButton = document.getElementById('sound-btn');
-  soundButton.addEventListener('click', function() {
-    soundEnabled = !soundEnabled;
+  function updateSoundButton() {
     soundButton.textContent = soundEnabled ? '🔊 Sound on' : '🔇 Sound off';
     soundButton.setAttribute('aria-pressed', String(soundEnabled));
     soundButton.title = soundEnabled ? 'Mute training sounds' : 'Enable training sounds';
+    soundButton.style.borderColor = soundEnabled ? 'var(--teal)' : 'rgba(255,255,255,0.25)';
+  }
+  soundButton.addEventListener('click', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    soundEnabled = !soundEnabled;
+    updateSoundButton();
     if (soundEnabled) playSound('click');
+    else Object.keys(audioClips).forEach(function(name) {
+      try { audioClips[name].pause(); audioClips[name].currentTime = 0; } catch (e) {}
+    });
   });
+  updateSoundButton();
 
   var HOTSPOTS = [
     {
@@ -564,6 +579,7 @@
 
   document.getElementById('continue-btn').addEventListener('click', function(){
     document.getElementById('info-panel').classList.add('hidden');
+    if (Object.keys(state.visited).length === HOTSPOTS.length) showResults();
   });
 
   // exit the quiz panel any time (unanswered hotspots stay unvisited)
@@ -651,9 +667,9 @@
     document.getElementById('intro-overlay').classList.add('hidden');
   });
 
-  // results
-  document.getElementById('results-btn').addEventListener('click', function(){
-    playSound('submit');
+  // Results are available from the HUD and automatically appear after the final hotspot.
+  var resultsShown = false;
+  function showResults() {
     var score = 0;
     var list = document.getElementById('results-list');
     list.innerHTML = '';
@@ -662,27 +678,37 @@
       if (ok) score++;
       var row = document.createElement('div');
       row.className = 'result-row';
-      row.innerHTML = '<span class="dot ' + (ok?'ok':'bad') + '"></span><span>' + h.title + '</span>';
+      var dot = document.createElement('span');
+      dot.className = 'dot ' + (ok ? 'ok' : 'bad');
+      var label = document.createElement('span');
+      label.textContent = h.title + (ok ? ' — Correct' : ' — Review this scenario');
+      row.appendChild(dot);
+      row.appendChild(label);
       list.appendChild(row);
     });
     document.getElementById('score-num').textContent = score;
     var verdict = document.getElementById('verdict');
-    if (score >= 5){
-      verdict.textContent = 'Pass \u2014 strong hazard awareness';
+    if (score >= 5) {
+      verdict.textContent = 'Excellent — strong hazard awareness';
       verdict.className = 'verdict pass';
-    } else if (score >= 4){
-      verdict.textContent = 'Pass \u2014 solid understanding, review the missed scenario(s)';
+    } else if (score >= 4) {
+      verdict.textContent = 'Passed — review the missed scenario(s)';
       verdict.className = 'verdict pass';
     } else {
-      verdict.textContent = 'Needs retraining \u2014 revisit the missed scenarios';
+      verdict.textContent = 'Keep learning — revisit the missed scenarios';
       verdict.className = 'verdict fail';
     }
-    playSound(score >= 4 ? 'pass' : 'fail');
     document.getElementById('results-overlay').classList.remove('hidden');
-  });
-
+    if (!resultsShown) {
+      playSound('submit');
+      resultsShown = true;
+      window.setTimeout(function(){ playSound(score >= 4 ? 'pass' : 'fail'); }, 450);
+    }
+  }
+  document.getElementById('results-btn').addEventListener('click', showResults);
   document.getElementById('close-results-btn').addEventListener('click', function(){
     document.getElementById('results-overlay').classList.add('hidden');
+    resultsShown = false;
   });
 
   document.getElementById('restart-btn').addEventListener('click', function(){
