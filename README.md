@@ -1,26 +1,33 @@
 # Tech Titans — Cyber Awareness 360°
 
-An interactive 360° cyber-awareness training project built with A-Frame and HTML.
+A unified interactive cyber-awareness training application with two selectable 360° environments.
 
-## Experiences
+## Launch
 
-- **Main 360° training:** [Open the main experience](./)
-- **Cyber Awareness Warehouse Prototype:** [Open the merged prototype](./cyberawareprototype/)
+Open the [Cyber Awareness Training App](./). The shared application shell provides persistent navigation between:
 
-## Main experience
+- **Office Training** — four cyber-risk hotspots, learning panels, progress tracking, and a five-question quiz.
+- **Warehouse Training** — six warehouse security hotspots, scenario questions, a learner sign-in prototype, and results.
 
-The main experience is served from the repository root and includes a 360° office environment, interactive cyber-awareness hotspots, learning panels, progress tracking, and a quiz.
+Both experiences run inside the same application shell. Use the top navigation to switch environments without leaving the app.
 
-## Warehouse prototype
+## Structure
 
-The original `cyberawareprototype` project is preserved in the `cyberawareprototype/` directory. Its HTML, styling, and interaction logic are kept separate so it does not overwrite the main experience.
+- `index.html`: shared application shell and environment navigation.
+- `office/index.html`: office training experience.
+- `cyberawareprototype/index.html`: warehouse training experience.
+- `aframe.min.js`, `assets/`, and `sounds/`: supporting office-scene assets.
 
 ## Run locally
 
-Because this is a static site, you can serve the repository with any local static web server. Open the repository root for the main experience, or open `cyberawareprototype/index.html` for the warehouse prototype.
+Serve the repository root with a static web server, then open its root URL. For example:
+
+```bash
+python -m http.server 8000
+```
+
+Visit `http://localhost:8000/`.
 
 ## Technologies
 
-- HTML, CSS, JavaScript
-- [A-Frame](https://aframe.io/)
-- GitHub Pages-compatible static files
+HTML, CSS, JavaScript, and A-Frame. The project is compatible with GitHub Pages static hosting.
