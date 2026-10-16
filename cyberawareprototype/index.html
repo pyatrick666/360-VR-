@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Cyber Awareness in Warehouse Environments — 360° Training Prototype</title>
+<title>Tech Titans — Warehouse Cyber Awareness 360° Training</title>
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <style>
   :root{
@@ -38,6 +38,8 @@
     color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:bold;
     backdrop-filter: blur(4px);
   }
+  #sound-btn{background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:9px 12px;border-radius:999px;font-size:13px;cursor:pointer}
+  #sound-btn:hover{background:rgba(255,255,255,0.22)}
   #results-btn{
     background:var(--teal);color:var(--navy);border:none;padding:9px 16px;border-radius:999px;
     font-weight:bold;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.35);
@@ -169,9 +171,10 @@
 <!-- ============ HUD ============ -->
 <div id="hud">
   <div class="title">Cyber Awareness in Warehouse Environments
-    <small>TECH TITANS · 360° TRAINING PROTOTYPE</small>
+    <small>TECH TITANS · 360° CYBER AWARENESS TRAINING</small>
   </div>
   <div id="progress-wrap">
+    <button id="sound-btn" type="button" aria-pressed="true" title="Mute training sounds">🔊 Sound on</button>
     <div id="user-chip" class="hidden">Signed in as <span id="user-name"></span><button id="logout-btn">Log out</button></div>
     <div id="progress-pill">Hotspots explored: <span id="progress-count">0</span>/6</div>
     <button id="results-btn" disabled>View Results</button>
@@ -277,6 +280,36 @@
 
 <script>
 (function(){
+
+  // Audio cues reused from the original training project.
+  var soundEnabled = true;
+  var soundFiles = {
+    click: '../sounds/click.mp3',
+    ding: '../sounds/ding.mp3',
+    fail: '../sounds/fail.mp3',
+    pass: '../sounds/pass.mp3',
+    submit: '../sounds/submit.mp3',
+    unlock: '../sounds/unlock.mp3'
+  };
+  var activeAudio = null;
+  function playSound(name) {
+    if (!soundEnabled || !soundFiles[name]) return;
+    try {
+      if (activeAudio) { activeAudio.pause(); activeAudio.currentTime = 0; }
+      activeAudio = new Audio(soundFiles[name]);
+      activeAudio.volume = 0.65;
+      var playback = activeAudio.play();
+      if (playback && playback.catch) playback.catch(function() {});
+    } catch (e) {}
+  }
+  var soundButton = document.getElementById('sound-btn');
+  soundButton.addEventListener('click', function() {
+    soundEnabled = !soundEnabled;
+    soundButton.textContent = soundEnabled ? '🔊 Sound on' : '🔇 Sound off';
+    soundButton.setAttribute('aria-pressed', String(soundEnabled));
+    soundButton.title = soundEnabled ? 'Mute training sounds' : 'Enable training sounds';
+    if (soundEnabled) playSound('click');
+  });
 
   var HOTSPOTS = [
     {
@@ -461,6 +494,7 @@
 
   function openPanel(h){
     currentHotspot = h;
+    playSound('click');
     document.getElementById('info-tag').textContent = h.tag;
     document.getElementById('info-title').textContent = h.title;
     document.getElementById('scenario-text').textContent = h.scenario;
@@ -501,6 +535,7 @@
 
   function selectAnswer(h, idx){
     var isCorrect = idx === h.correct;
+    playSound(isCorrect ? 'ding' : 'fail');
     state.visited[h.id] = true;
     state.correct[h.id] = isCorrect;
     state.answered_idx_map[h.id] = idx;
@@ -516,6 +551,7 @@
     document.getElementById('continue-btn').classList.remove('hidden');
     markDone(h);
     updateProgress();
+    if (Object.keys(state.visited).length === HOTSPOTS.length) playSound('unlock');
   }
 
   function showFeedback(h, isCorrect){
@@ -617,6 +653,7 @@
 
   // results
   document.getElementById('results-btn').addEventListener('click', function(){
+    playSound('submit');
     var score = 0;
     var list = document.getElementById('results-list');
     list.innerHTML = '';
@@ -640,6 +677,7 @@
       verdict.textContent = 'Needs retraining \u2014 revisit the missed scenarios';
       verdict.className = 'verdict fail';
     }
+    playSound(score >= 4 ? 'pass' : 'fail');
     document.getElementById('results-overlay').classList.remove('hidden');
   });
 
@@ -648,6 +686,7 @@
   });
 
   document.getElementById('restart-btn').addEventListener('click', function(){
+    playSound('click');
     location.reload();
   });
 
