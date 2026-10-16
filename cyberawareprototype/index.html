@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cyber Awareness in Warehouse Environments — 360° Training Prototype</title>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<style>
+  :root{
+    --navy:#0B2545;
+    --navy2:#13315C;
+    --teal:#2EC4B6;
+    --teal-dark:#1a9d91;
+    --ice:#EAF7F6;
+    --slate:#55677D;
+    --red:#e0554f;
+    --green:#2EC4B6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Calibri,Arial,sans-serif;background:#000;overflow:hidden;}
+  a-scene{width:100vw;height:100vh;}
+
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;}
+  .hidden{display:none !important;}
+
+  /* HUD */
+  #hud{
+    position:fixed;top:0;left:0;right:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;background:linear-gradient(180deg, rgba(11,37,69,0.92), rgba(11,37,69,0));
+    color:#fff;pointer-events:none;
+  }
+  #hud .title{font-weight:bold;font-size:16px;letter-spacing:.3px;}
+  #hud .title small{display:block;font-weight:normal;font-size:11px;color:#8DA9C4;letter-spacing:.5px;margin-top:2px;}
+  #progress-wrap{display:flex;align-items:center;gap:10px;pointer-events:auto;}
+  #progress-pill{
+    background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+    color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:bold;
+    backdrop-filter: blur(4px);
+  }
+  #results-btn{
+    background:var(--teal);color:var(--navy);border:none;padding:9px 16px;border-radius:999px;
+    font-weight:bold;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.35);
+  }
+  #results-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  /* Crosshair cursor */
+  #hint{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:20;
+    background:rgba(11,37,69,0.75);color:#fff;padding:8px 16px;border-radius:999px;
+    font-size:12.5px;pointer-events:none;letter-spacing:.2px;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+
+  /* Intro + Results card styling (shared) */
+  .card{
+    background:#fff;max-width:560px;width:92%;border-radius:18px;padding:34px 34px 28px;
+    box-shadow:0 30px 80px rgba(0,0,0,0.45);
+    max-height:88vh;overflow-y:auto;
+  }
+  .card h1{font-family:Cambria,Georgia,serif;color:var(--navy);font-size:26px;margin:0 0 6px;}
+  .card p.lead{color:var(--slate);font-size:14px;margin:0 0 18px;line-height:1.5;}
+  .steps{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+  .step{display:flex;gap:12px;align-items:flex-start;}
+  .step .num{
+    flex:0 0 26px;height:26px;border-radius:50%;background:var(--ice);color:var(--navy);
+    display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;
+  }
+  .step .txt{font-size:13.5px;color:var(--slate);line-height:1.45;padding-top:3px;}
+  .step .txt b{color:var(--navy);}
+  .btn-primary{
+    background:var(--navy);color:#fff;border:none;padding:13px 22px;border-radius:10px;
+    font-weight:bold;font-size:14.5px;cursor:pointer;width:100%;
+  }
+  .btn-primary:hover{background:var(--navy2);}
+
+  /* Info / quiz panel */
+  #info-panel{align-items:flex-end;justify-content:center;padding-bottom:0;}
+  #info-card{
+    background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;
+    padding:26px 30px 26px;box-shadow:0 -20px 60px rgba(0,0,0,0.5);
+    max-height:78vh;overflow-y:auto;position:relative;
+  }
+  .close-x{
+    position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;
+    border:1.5px solid #E1E8F0;background:#fff;color:var(--slate);
+    font-size:19px;line-height:1;cursor:pointer;font-weight:bold;
+  }
+  .close-x:hover{border-color:var(--red);color:#b3352f;}
+  @media (min-width:700px){
+    #info-panel{align-items:center;padding-bottom:0;}
+    #info-card{border-radius:20px;max-height:82vh;}
+  }
+  .tag{
+    display:inline-block;background:var(--ice);color:var(--teal-dark);font-weight:bold;
+    font-size:11px;letter-spacing:.4px;text-transform:uppercase;padding:5px 11px;border-radius:999px;
+    margin-bottom:10px;
+  }
+  #info-card h2{font-family:Cambria,Georgia,serif;color:var(--navy);font-size:21px;margin:0 0 10px;}
+  #scenario-text{color:var(--slate);font-size:14px;line-height:1.55;margin:0 0 18px;
+    background:#F4F7FA;border-left:3px solid var(--teal);padding:12px 14px;border-radius:6px;}
+  #question-text{color:var(--navy);font-weight:bold;font-size:14.5px;margin:0 0 12px;}
+  #options{display:flex;flex-direction:column;gap:9px;margin-bottom:6px;}
+  .opt-btn{
+    text-align:left;border:1.5px solid #E1E8F0;background:#fff;color:var(--navy);
+    padding:11px 14px;border-radius:10px;font-size:13.5px;cursor:pointer;line-height:1.4;
+  }
+  .opt-btn:hover{border-color:var(--teal);}
+  .opt-btn.correct{background:#e9fbf6;border-color:var(--teal);color:var(--teal-dark);font-weight:bold;}
+  .opt-btn.incorrect{background:#fdecea;border-color:var(--red);color:#b3352f;font-weight:bold;}
+  .opt-btn:disabled{cursor:default;}
+  #feedback{display:none;margin-top:14px;padding:12px 14px;border-radius:8px;font-size:13.5px;line-height:1.5;}
+  #feedback.show{display:block;}
+  #feedback.ok{background:#e9fbf6;color:#0f6f63;}
+  #feedback.bad{background:#fdecea;color:#8f2b26;}
+  #continue-btn{margin-top:16px;}
+
+  /* Results screen */
+  #results-card{max-width:560px;}
+  #results-score{
+    text-align:center;margin:6px 0 20px;
+  }
+  #results-score .big{font-family:Cambria,Georgia,serif;font-size:44px;color:var(--navy);font-weight:bold;}
+  #results-score .verdict{font-weight:bold;font-size:15px;margin-top:6px;}
+  #results-score .verdict.pass{color:var(--teal-dark);}
+  #results-score .verdict.fail{color:#b3352f;}
+  #results-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+  .result-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--navy);
+    background:#F4F7FA;padding:9px 12px;border-radius:8px;}
+  .result-row .dot{flex:0 0 10px;height:10px;border-radius:50%;}
+  .result-row .dot.ok{background:#2ecc71;}
+  .result-row .dot.bad{background:var(--red);}
+  #restart-btn{background:transparent;color:var(--navy);border:1.5px solid var(--navy);
+    padding:11px 20px;border-radius:10px;font-weight:bold;font-size:13.5px;cursor:pointer;width:100%;margin-top:10px;}
+
+  /* Login */
+  #login-card{max-width:420px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12.5px;font-weight:bold;color:var(--navy);margin-bottom:5px;}
+  .field input{
+    width:100%;padding:11px 13px;border:1.5px solid #E1E8F0;border-radius:10px;
+    font-size:14px;font-family:inherit;color:var(--navy);
+  }
+  .field input:focus{outline:none;border-color:var(--teal);}
+  #login-error{
+    display:none;margin-bottom:12px;padding:10px 13px;border-radius:8px;font-size:13px;
+    background:#fdecea;color:#8f2b26;
+  }
+  #login-error.show{display:block;}
+  .remember-row{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--slate);margin-bottom:16px;cursor:pointer;}
+  .demo-hint{font-size:12px;color:var(--slate);margin:14px 0 0;text-align:center;line-height:1.5;}
+  .demo-hint b{color:var(--navy);}
+  #user-chip{
+    display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.25);color:#fff;padding:6px 8px 6px 14px;
+    border-radius:999px;font-size:13px;font-weight:bold;backdrop-filter:blur(4px);
+  }
+  #logout-btn{
+    background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);
+    padding:5px 12px;border-radius:999px;font-size:12px;font-weight:bold;cursor:pointer;
+  }
+  #logout-btn:hover{background:rgba(255,255,255,0.3);}
+  #results-user{text-align:center;font-size:13px;color:var(--slate);margin:-12px 0 16px;}
+  #results-user b{color:var(--navy);}
+</style>
+</head>
+<body>
+
+<!-- ============ HUD ============ -->
+<div id="hud">
+  <div class="title">Cyber Awareness in Warehouse Environments
+    <small>TECH TITANS · 360° TRAINING PROTOTYPE</small>
+  </div>
+  <div id="progress-wrap">
+    <div id="user-chip" class="hidden">Signed in as <span id="user-name"></span><button id="logout-btn">Log out</button></div>
+    <div id="progress-pill">Hotspots explored: <span id="progress-count">0</span>/6</div>
+    <button id="results-btn" disabled>View Results</button>
+  </div>
+</div>
+
+<div id="hint">Drag to look around · click a glowing marker to investigate</div>
+
+<!-- ============ LOGIN ============ -->
+<div class="overlay" id="login-overlay">
+  <div class="card" id="login-card">
+    <h1>Sign in</h1>
+    <p class="lead">Log in to start your warehouse cyber-awareness training.</p>
+    <div class="field">
+      <label for="login-user">Username</label>
+      <input id="login-user" type="text" placeholder="e.g. trainee" autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="login-pass">Password</label>
+      <input id="login-pass" type="password" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+    <div id="login-error">Incorrect username or password. Try a demo account below.</div>
+    <label class="remember-row"><input type="checkbox" id="remember-me"> Remember me on this device</label>
+    <button class="btn-primary" id="login-btn">Log in</button>
+    <p class="demo-hint">Demo accounts: <b>trainee / warehouse123</b> &nbsp;·&nbsp; <b>admin / admin123</b></p>
+  </div>
+</div>
+
+<!-- ============ INTRO ============ -->
+<div class="overlay hidden" id="intro-overlay">
+  <div class="card">
+    <h1 id="intro-title">Welcome to the training floor</h1>
+    <p class="lead">You're standing inside a real warehouse. Six cybersecurity risks are scattered around you at different heights and angles — look up, down and behind you, then click each glowing marker to investigate.</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div class="txt"><b>Look around</b> — drag with your mouse (or move your phone) to explore the full 360° scene.</div></div>
+      <div class="step"><div class="num">2</div><div class="txt"><b>Click a marker</b> to reveal the scenario and answer a short question about it.</div></div>
+      <div class="step"><div class="num">3</div><div class="txt"><b>Finish all 6</b> to unlock your results and see your hazard-spotting score.</div></div>
+    </div>
+    <button class="btn-primary" id="start-btn">Enter the scene</button>
+  </div>
+</div>
+
+<!-- ============ INFO / QUIZ PANEL ============ -->
+<div class="overlay hidden" id="info-panel">
+  <div id="info-card">
+    <button class="close-x" id="info-close" title="Exit without answering" aria-label="Exit">&#215;</button>
+    <span class="tag" id="info-tag">Hotspot</span>
+    <h2 id="info-title">Title</h2>
+    <p id="scenario-text">Scenario</p>
+    <p id="question-text">Question</p>
+    <div id="options"></div>
+    <div id="feedback"></div>
+    <button class="btn-primary hidden" id="continue-btn">Continue exploring</button>
+  </div>
+</div>
+
+<!-- ============ RESULTS ============ -->
+<div class="overlay hidden" id="results-overlay">
+  <div class="card" id="results-card">
+    <h1>Training results</h1>
+    <p class="lead">Here's how you did spotting the risks around the workstation.</p>
+    <p id="results-user">Trainee: <b id="results-user-name"></b></p>
+    <div id="results-score">
+      <div class="big"><span id="score-num">0</span>/6</div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <div id="results-list"></div>
+    <button class="btn-primary" id="close-results-btn">Close</button>
+    <button id="restart-btn">Restart training</button>
+  </div>
+</div>
+
+<!-- ============ 360° A-FRAME SCENE ============ -->
+<a-scene cursor="rayOrigin: mouse" raycaster="objects: .hotspot">
+
+  <a-assets>
+    <img id="warehouse-pano" src="https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/empty_warehouse_01.jpg" crossorigin="anonymous">
+  </a-assets>
+
+  <!-- REAL 360° warehouse photo background (CC0, Poly Haven) -->
+  <a-sky src="#warehouse-pano" color="#5B6B7A" rotation="0 -90 0"></a-sky>
+
+  <!-- lighting (for hotspot markers; photo sky is unlit) -->
+  <a-entity light="type: ambient; color:#ffffff; intensity:0.9"></a-entity>
+  <a-entity light="type: directional; color:#ffffff; intensity:0.6" position="-3 6 2"></a-entity>
+
+  <!-- invisible ground reference (photo provides all visuals) -->
+  <a-plane rotation="-90 0 0" width="30" height="30" position="0 0 0" visible="false"></a-plane>
+
+  <!-- ===================== HOTSPOTS injected by JS ===================== -->
+  <a-entity id="hotspot-root"></a-entity>
+
+  <!-- camera rig -->
+  <a-entity id="rig" position="0 1.6 0">
+    <a-camera look-controls wasd-controls-enabled="false">
+      <a-entity cursor="rayOrigin: mouse; fuse: false"
+                 raycaster="objects: .hotspot; far: 30"
+                 position="0 0 -1"></a-entity>
+    </a-camera>
+  </a-entity>
+
+</a-scene>
+
+<script>
+(function(){
+
+  var HOTSPOTS = [
+    {
+      id: "phishing",
+      tag: "Hotspot 1 · Monitor",
+      title: "Phishing email",
+      pos: "1.25 1.7 -8.91",
+      color: "#2EC4B6",
+      scenario: "The dispatch monitor shows an open inbox. The top email reads: \u201cURGENT: Invoice #4482 overdue \u2014 pay within 24 hours\u201d, sent from accounts-payable@dispatch-invoíces-secure.com, with an attachment named invoice_final.exe.",
+      question: "What is the correct action?",
+      options: [
+        "Open the attachment to check the invoice details",
+        "Reply to the sender asking for more information",
+        "Report the email to IT and do not open the link or attachment",
+        "Forward it to a coworker to double-check"
+      ],
+      correct: 2,
+      explain: "The mismatched domain, urgent tone and unexpected .exe attachment are classic phishing red flags. Report it to IT \u2014 never open the link or attachment."
+    },
+    {
+      id: "password",
+      tag: "Hotspot 2 · Scanner station",
+      title: "Weak / shared password",
+      pos: "6.95 0.9 -2.81",
+      color: "#2EC4B6",
+      scenario: "A sticky note is taped to the shared handheld scanner: \u201cLogin: warehouse1 / Pass: Warehouse123!\u201d \u2014 visible to anyone walking past the station.",
+      question: "What's wrong with this, and what should happen?",
+      options: [
+        "Nothing \u2014 it saves time for the whole shift",
+        "The password is written down and shared, defeating access control \u2014 remove it and issue individual logins",
+        "It should be moved to a whiteboard instead",
+        "It's fine as long as it's changed every year"
+      ],
+      correct: 1,
+      explain: "A written, shared password means there's no way to know who actually accessed the system. Remove the note and move to individual, non-shared credentials."
+    },
+    {
+      id: "access",
+      tag: "Hotspot 3 · Terminal",
+      title: "Unauthorised access",
+      pos: "5.45 2.4 7.78",
+      color: "#2EC4B6",
+      scenario: "A terminal is still logged in and unattended. Someone you don't recognise is walking straight toward it, badge not visible.",
+      question: "What's the correct response?",
+      options: [
+        "Ignore it \u2014 it's not your workstation",
+        "Assume they work here since they're inside the building",
+        "Lock the screen immediately and politely check who they are",
+        "Log them out without saying anything"
+      ],
+      correct: 2,
+      explain: "Lock any unattended, logged-in terminal on sight, and challenge anyone unfamiliar near restricted equipment \u2014 politely, but every time."
+    },
+    {
+      id: "usb",
+      tag: "Hotspot 4 · Packing bench",
+      title: "Suspicious USB device",
+      pos: "-1.66 0.7 7.83",
+      color: "#2EC4B6",
+      scenario: "An unlabelled USB drive is sitting on the packing bench. Nobody on shift recognises it or remembers leaving it there.",
+      question: "What should you do with it?",
+      options: [
+        "Plug it into a computer to see who it belongs to",
+        "Leave it \u2014 someone will claim it eventually",
+        "Hand it to IT/security without plugging it into anything",
+        "Take it home to check it safely later"
+      ],
+      correct: 2,
+      explain: "Unknown USB drives can carry malware that runs the moment they're plugged in (a classic \u201cUSB drop\u201d attack). Hand it to IT/security \u2014 never plug it in."
+    },
+    {
+      id: "download",
+      tag: "Hotspot 5 · Kiosk",
+      title: "Unsafe download",
+      pos: "-9.11 2.0 1.28",
+      color: "#2EC4B6",
+      scenario: "The shared kiosk terminal shows a pop-up: \u201cUpdate available \u2014 Install now\u201d from a source that isn't the company's usual software vendor.",
+      question: "What's the best response?",
+      options: [
+        "Click install immediately to clear the pop-up",
+        "Decline the install and verify with IT before installing anything",
+        "Restart the device repeatedly until it goes away",
+        "Ignore it forever and keep working"
+      ],
+      correct: 1,
+      explain: "Unsolicited install prompts from unverified sources are a common malware vector. Always decline and confirm with IT before installing anything on shared devices."
+    },
+    {
+      id: "info",
+      tag: "Hotspot 6 · Shipping desk",
+      title: "Sensitive info handling",
+      pos: "-5.22 1.3 -5.80",
+      color: "#2EC4B6",
+      scenario: "A shipping manifest listing customer names, addresses and order values is left face-up on the desk, visible to anyone passing by.",
+      question: "What should happen to this document?",
+      options: [
+        "Leave it \u2014 someone will need it later",
+        "Photograph it for personal reference",
+        "Secure it out of sight, or shred it once it's no longer needed",
+        "Post it on the notice board for the team"
+      ],
+      correct: 2,
+      explain: "Customer and order data is sensitive information. It should never be left exposed \u2014 secure it while in use and shred it once it's no longer needed."
+    }
+  ];
+
+  var state = { visited:{}, correct:{} };
+
+  var root = document.getElementById('hotspot-root');
+  HOTSPOTS.forEach(function(h, i){
+    var wrap = document.createElement('a-entity');
+    wrap.setAttribute('id', 'hs-' + h.id);
+    wrap.setAttribute('position', h.pos);
+
+    var marker = document.createElement('a-entity');
+    marker.classList.add('hotspot');
+    marker.setAttribute('geometry', 'primitive: sphere; radius: 0.16');
+    marker.setAttribute('material', 'color:' + h.color + '; emissive:' + h.color + '; emissiveIntensity:0.75; shader:standard; side:double');
+    marker.setAttribute('animation', 'property: scale; dir: alternate; dur: 900; easing: easeInOutSine; loop: true; to: 1.35 1.35 1.35');
+    marker.setAttribute('data-id', h.id);
+    wrap.appendChild(marker);
+
+    var ring = document.createElement('a-entity');
+    ring.classList.add('halo-ring');
+    ring.setAttribute('geometry', 'primitive: ring; radiusInner: 0.22; radiusOuter: 0.27');
+    ring.setAttribute('material', 'color:' + h.color + '; shader:flat; side:double; opacity:0.85; depthTest:false');
+    ring.setAttribute('animation', 'property: rotation; to: 0 0 360; loop: true; dur: 6000; easing: linear');
+    wrap.appendChild(ring);
+
+    // soft glow halo so markers pop against the photo background
+    var halo = document.createElement('a-entity');
+    halo.classList.add('halo');
+    halo.setAttribute('geometry', 'primitive: sphere; radius: 0.28');
+    halo.setAttribute('material', 'color:' + h.color + '; transparent:true; opacity:0.25; shader:flat; depthWrite:false');
+    wrap.appendChild(halo);
+
+    var label = document.createElement('a-entity');
+    label.setAttribute('text', 'value:' + (i+1) + ';align:center;color:#ffffff;width:2');
+    label.setAttribute('position', '0 0 0.19');
+    label.setAttribute('scale', '0.9 0.9 0.9');
+    marker.appendChild(label);
+
+    root.appendChild(wrap);
+  });
+
+  function updateProgress(){
+    var count = Object.keys(state.visited).length;
+    document.getElementById('progress-count').textContent = count;
+    var btn = document.getElementById('results-btn');
+    btn.disabled = count < HOTSPOTS.length;
+  }
+
+  function markDone(h){
+    var wrap = document.getElementById('hs-' + h.id);
+    var marker = wrap.querySelector('.hotspot');
+    var ok = state.correct[h.id];
+    var color = ok ? '#2ecc71' : '#e0554f';
+    marker.setAttribute('material', 'color:' + color + '; emissive:' + color + '; emissiveIntensity:0.4; shader:standard; side:double');
+    marker.removeAttribute('animation');
+    marker.setAttribute('scale', '0.85 0.85 0.85');
+    var halo = wrap.querySelector('.halo');
+    if (halo) halo.setAttribute('material', 'color:' + color + '; transparent:true; opacity:0.18; shader:flat; depthWrite:false');
+    var ring = wrap.querySelector('.halo-ring');
+    if (ring) ring.setAttribute('material', 'color:' + color + '; shader:flat; side:double; opacity:0.7; depthTest:false');
+  }
+
+  // keep scattered hotspots facing the camera so rings/labels stay readable
+  (function billboard(){
+    var camEl = document.querySelector('[camera]');
+    if (camEl && camEl.object3D){
+      var tmp = new THREE.Vector3();
+      camEl.object3D.getWorldPosition(tmp);
+      HOTSPOTS.forEach(function(h){
+        var w = document.getElementById('hs-' + h.id);
+        if (w && w.object3D) w.object3D.lookAt(tmp);
+      });
+    }
+    requestAnimationFrame(billboard);
+  })();
+
+  var currentHotspot = null;
+
+  function openPanel(h){
+    currentHotspot = h;
+    document.getElementById('info-tag').textContent = h.tag;
+    document.getElementById('info-title').textContent = h.title;
+    document.getElementById('scenario-text').textContent = h.scenario;
+    document.getElementById('question-text').textContent = h.question;
+    var optWrap = document.getElementById('options');
+    optWrap.innerHTML = '';
+    var feedback = document.getElementById('feedback');
+    feedback.className = ''; feedback.textContent='';
+    document.getElementById('continue-btn').classList.add('hidden');
+
+    var already = state.visited[h.id];
+
+    h.options.forEach(function(opt, idx){
+      var b = document.createElement('button');
+      b.className = 'opt-btn';
+      b.textContent = String.fromCharCode(65+idx) + ')  ' + opt;
+      b.disabled = !!already;
+      if (already) {
+        if (idx === h.correct) b.classList.add('correct');
+        if (idx === state.answered_idx_map[h.id] && idx !== h.correct) b.classList.add('incorrect');
+      }
+      b.addEventListener('click', function(){
+        if (state.visited[h.id]) return;
+        selectAnswer(h, idx);
+      });
+      optWrap.appendChild(b);
+    });
+
+    if (already){
+      showFeedback(h, state.correct[h.id]);
+      document.getElementById('continue-btn').classList.remove('hidden');
+    }
+
+    document.getElementById('info-panel').classList.remove('hidden');
+  }
+
+  state.answered_idx_map = {};
+
+  function selectAnswer(h, idx){
+    var isCorrect = idx === h.correct;
+    state.visited[h.id] = true;
+    state.correct[h.id] = isCorrect;
+    state.answered_idx_map[h.id] = idx;
+
+    var btns = document.querySelectorAll('#options .opt-btn');
+    btns.forEach(function(b, i){
+      b.disabled = true;
+      if (i === h.correct) b.classList.add('correct');
+      else if (i === idx) b.classList.add('incorrect');
+    });
+
+    showFeedback(h, isCorrect);
+    document.getElementById('continue-btn').classList.remove('hidden');
+    markDone(h);
+    updateProgress();
+  }
+
+  function showFeedback(h, isCorrect){
+    var fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    fb.classList.toggle('ok', isCorrect);
+    fb.classList.toggle('bad', !isCorrect);
+    fb.textContent = (isCorrect ? "Correct. " : "Not quite. ") + h.explain;
+  }
+
+  document.getElementById('continue-btn').addEventListener('click', function(){
+    document.getElementById('info-panel').classList.add('hidden');
+  });
+
+  // exit the quiz panel any time (unanswered hotspots stay unvisited)
+  document.getElementById('info-close').addEventListener('click', function(){
+    document.getElementById('info-panel').classList.add('hidden');
+  });
+
+  // click handling from A-Frame
+  document.addEventListener('DOMContentLoaded', function(){
+    var scene = document.querySelector('a-scene');
+    scene.addEventListener('click', function(evt){
+      var el = evt.detail && evt.detail.intersectedEl ? evt.detail.intersectedEl : null;
+      if (el && el.getAttribute('data-id')){
+        var id = el.getAttribute('data-id');
+        var h = HOTSPOTS.filter(function(x){ return x.id === id; })[0];
+        if (h) openPanel(h);
+      }
+    });
+  });
+
+  // Fallback: attach per-entity click too (some A-Frame versions fire on element itself)
+  setTimeout(function(){
+    document.querySelectorAll('.hotspot').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = el.getAttribute('data-id');
+        var h = HOTSPOTS.filter(function(x){ return x.id === id; })[0];
+        if (h) openPanel(h);
+      });
+    });
+  }, 500);
+
+  // ---- simple login (demo accounts, no backend) ----
+  var USERS = {
+    "trainee": "warehouse123",
+    "admin": "admin123"
+  };
+  var currentUser = null;
+  try { currentUser = localStorage.getItem('tt_user') || null; } catch (e) { currentUser = null; }
+
+  function showLoggedIn(user){
+    currentUser = user;
+    document.getElementById('login-overlay').classList.add('hidden');
+    document.getElementById('intro-overlay').classList.remove('hidden');
+    document.getElementById('intro-title').textContent = 'Welcome, ' + user;
+    document.getElementById('user-name').textContent = user;
+    document.getElementById('user-chip').classList.remove('hidden');
+    document.getElementById('results-user-name').textContent = user;
+  }
+
+  function tryLogin(){
+    var u = document.getElementById('login-user').value.trim().toLowerCase();
+    var p = document.getElementById('login-pass').value;
+    var err = document.getElementById('login-error');
+    if (USERS[u] && USERS[u] === p){
+      err.classList.remove('show');
+      if (document.getElementById('remember-me').checked){
+        try { localStorage.setItem('tt_user', u); } catch (e) {}
+      }
+      showLoggedIn(u);
+    } else {
+      err.classList.add('show');
+    }
+  }
+
+  document.getElementById('login-btn').addEventListener('click', tryLogin);
+  document.getElementById('login-pass').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') tryLogin();
+  });
+  document.getElementById('login-user').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') tryLogin();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', function(){
+    try { localStorage.removeItem('tt_user'); } catch (e) {}
+    location.reload();
+  });
+
+  // auto-login if "remember me" was set previously
+  if (currentUser && USERS[currentUser]){
+    showLoggedIn(currentUser);
+  }
+
+  // intro
+  document.getElementById('start-btn').addEventListener('click', function(){
+    document.getElementById('intro-overlay').classList.add('hidden');
+  });
+
+  // results
+  document.getElementById('results-btn').addEventListener('click', function(){
+    var score = 0;
+    var list = document.getElementById('results-list');
+    list.innerHTML = '';
+    HOTSPOTS.forEach(function(h){
+      var ok = !!state.correct[h.id];
+      if (ok) score++;
+      var row = document.createElement('div');
+      row.className = 'result-row';
+      row.innerHTML = '<span class="dot ' + (ok?'ok':'bad') + '"></span><span>' + h.title + '</span>';
+      list.appendChild(row);
+    });
+    document.getElementById('score-num').textContent = score;
+    var verdict = document.getElementById('verdict');
+    if (score >= 5){
+      verdict.textContent = 'Pass \u2014 strong hazard awareness';
+      verdict.className = 'verdict pass';
+    } else if (score >= 4){
+      verdict.textContent = 'Pass \u2014 solid understanding, review the missed scenario(s)';
+      verdict.className = 'verdict pass';
+    } else {
+      verdict.textContent = 'Needs retraining \u2014 revisit the missed scenarios';
+      verdict.className = 'verdict fail';
+    }
+    document.getElementById('results-overlay').classList.remove('hidden');
+  });
+
+  document.getElementById('close-results-btn').addEventListener('click', function(){
+    document.getElementById('results-overlay').classList.add('hidden');
+  });
+
+  document.getElementById('restart-btn').addEventListener('click', function(){
+    location.reload();
+  });
+
+})();
+</script>
+
+</body>
+</html>
