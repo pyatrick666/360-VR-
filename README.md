@@ -1,33 +1,37 @@
-# Tech Titans — Cyber Awareness 360°
+# Tech Titans — Warehouse Cyber Awareness 360° Training
 
-A unified interactive cyber-awareness training application with two selectable 360° environments.
+An interactive 360° warehouse cyber-awareness training application featuring six security hotspots, scenario-based questions, progress tracking, learner sign-in demo, results, and audio feedback.
 
 ## Launch
 
-Open the [Cyber Awareness Training App](./). The shared application shell provides persistent navigation between:
+Open the [Cyber Awareness Training App](./).
 
-- **Office Training** — four cyber-risk hotspots, learning panels, progress tracking, and a five-question quiz.
-- **Warehouse Training** — six warehouse security hotspots, scenario questions, a learner sign-in prototype, and results.
+## Features
 
-Both experiences run inside the same application shell. Use the top navigation to switch environments without leaving the app.
+- Explore a 360° warehouse environment.
+- Investigate six interactive cybersecurity hotspots.
+- Answer scenario questions and receive immediate feedback.
+- Track hotspot completion and review training results.
+- Use the **Sound on / Sound off** control to enable or mute audio cues.
+- Audio feedback includes marker clicks, correct and incorrect answers, completion, and results.
 
-## Structure
+## Project structure
 
-- `index.html`: shared application shell and environment navigation.
-- `office/index.html`: office training experience.
-- `cyberawareprototype/index.html`: warehouse training experience.
-- `aframe.min.js`, `assets/`, and `sounds/`: supporting office-scene assets.
+- `index.html`: main warehouse training application.
+- `cyberawareprototype/index.html`: standalone copy of the warehouse training experience.
+- `sounds/`: shared training audio files.
+- `office/`: removed from the active application.
 
 ## Run locally
 
-Serve the repository root with a static web server, then open its root URL. For example:
+Serve the repository root with a static web server:
 
 ```bash
 python -m http.server 8000
 ```
 
-Visit `http://localhost:8000/`.
+Then visit `http://localhost:8000/`.
 
 ## Technologies
 
-HTML, CSS, JavaScript, and A-Frame. The project is compatible with GitHub Pages static hosting.
+HTML, CSS, JavaScript, and A-Frame. Compatible with GitHub Pages static hosting.
