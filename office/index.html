@@ -677,12 +677,12 @@
   }
 
   // Preload
-  loadSound('click',  'sounds/click.mp3');
-  loadSound('ding',   'sounds/ding.mp3');
-  loadSound('unlock', 'sounds/unlock.mp3');
-  loadSound('submit', 'sounds/submit.mp3');
-  loadSound('pass',   'sounds/pass.mp3');
-  loadSound('fail',   'sounds/fail.mp3');
+  loadSound('click',  '../sounds/click.mp3');
+  loadSound('ding',   '../sounds/ding.mp3');
+  loadSound('unlock', '../sounds/unlock.mp3');
+  loadSound('submit', '../sounds/submit.mp3');
+  loadSound('pass',   '../sounds/pass.mp3');
+  loadSound('fail',   '../sounds/fail.mp3');
 
   function toggleSound() {
     soundEnabled = !soundEnabled;
@@ -714,7 +714,7 @@
   function startTraining() {
     // Prime audio on user gesture
     try {
-      var primer = new Audio('sounds/click.mp3');
+      var primer = new Audio('../sounds/click.mp3');
       primer.volume = 0;
       primer.play().catch(function(){});
     } catch(e) {}
