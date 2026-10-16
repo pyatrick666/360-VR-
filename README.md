@@ -1,37 +1,29 @@
 # Tech Titans — Warehouse Cyber Awareness 360° Training
 
-An interactive 360° warehouse cyber-awareness training application featuring six security hotspots, scenario-based questions, progress tracking, learner sign-in demo, results, and audio feedback.
+A single-page interactive cybersecurity awareness experience set in a 360° warehouse environment.
 
 ## Launch
 
-Open the [Cyber Awareness Training App](./).
+Open the published application: https://pyatrick666.github.io/360-VR-/
 
 ## Features
 
-- Explore a 360° warehouse environment.
-- Investigate six interactive cybersecurity hotspots.
-- Answer scenario questions and receive immediate feedback.
-- Track hotspot completion and review training results.
-- Use the **Sound on / Sound off** control to enable or mute audio cues.
-- Audio feedback includes marker clicks, correct and incorrect answers, completion, and results.
+- Interactive 360° warehouse scene with six cybersecurity risk hotspots
+- Scenario-based multiple-choice questions with immediate feedback
+- Progress tracking and a final score with scenario-by-scenario review
+- Sound toggle and audio feedback for answers, progress, and results
+- Demo sign-in accounts for exploring the prototype
+
+## Demo accounts
+
+- **Trainee:** `trainee` / `warehouse123`
+- **Admin:** `admin` / `admin123`
+
+This is a front-end educational prototype. Demo authentication is client-side only and is not suitable for real accounts or sensitive data.
 
 ## Project structure
 
-- `index.html`: main warehouse training application.
-- `cyberawareprototype/index.html`: standalone copy of the warehouse training experience.
-- `sounds/`: shared training audio files.
-- `office/`: removed from the active application.
+- `index.html` — the complete application: markup, styles, scene, quiz logic, login demo, sound controls, and results
+- `sounds/` — six short audio effects used by the application
 
-## Run locally
-
-Serve the repository root with a static web server:
-
-```bash
-python -m http.server 8000
-```
-
-Then visit `http://localhost:8000/`.
-
-## Technologies
-
-HTML, CSS, JavaScript, and A-Frame. Compatible with GitHub Pages static hosting.
+The 360° scene uses A-Frame from its hosted CDN and a warehouse panorama hosted by Poly Haven, so those resources require an internet connection.
