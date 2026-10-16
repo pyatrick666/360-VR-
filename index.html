@@ -292,19 +292,27 @@
     unlock: 'sounds/unlock.mp3'
   };
   var audioClips = {};
+  var activeAudioClips = [];
   Object.keys(soundFiles).forEach(function(name) {
     var audio = new Audio(new URL(soundFiles[name], document.baseURI).href);
     audio.preload = 'auto';
     audio.volume = 0.7;
     audioClips[name] = audio;
   });
+  function forgetAudioClip(clip) {
+    var index = activeAudioClips.indexOf(clip);
+    if (index !== -1) activeAudioClips.splice(index, 1);
+  }
   function playSound(name) {
     if (!soundEnabled || !audioClips[name]) return;
     try {
       var clip = audioClips[name].cloneNode();
       clip.volume = 0.7;
+      activeAudioClips.push(clip);
+      clip.addEventListener('ended', function() { forgetAudioClip(clip); }, { once: true });
+      clip.addEventListener('error', function() { forgetAudioClip(clip); }, { once: true });
       var playback = clip.play();
-      if (playback && playback.catch) playback.catch(function() {});
+      if (playback && playback.catch) playback.catch(function() { forgetAudioClip(clip); });
     } catch (e) {}
   }
   var soundButton = document.getElementById('sound-btn');
@@ -319,10 +327,17 @@
     event.stopPropagation();
     soundEnabled = !soundEnabled;
     updateSoundButton();
-    if (soundEnabled) playSound('click');
-    else Object.keys(audioClips).forEach(function(name) {
-      try { audioClips[name].pause(); audioClips[name].currentTime = 0; } catch (e) {}
-    });
+    if (soundEnabled) {
+      playSound('click');
+    } else {
+      activeAudioClips.slice().forEach(function(clip) {
+        try { clip.pause(); clip.currentTime = 0; } catch (e) {}
+        forgetAudioClip(clip);
+      });
+      Object.keys(audioClips).forEach(function(name) {
+        try { audioClips[name].pause(); audioClips[name].currentTime = 0; } catch (e) {}
+      });
+    }
   });
   updateSoundButton();
 
@@ -445,6 +460,10 @@
     marker.setAttribute('material', 'color:' + h.color + '; emissive:' + h.color + '; emissiveIntensity:0.75; shader:standard; side:double');
     marker.setAttribute('animation', 'property: scale; dir: alternate; dur: 900; easing: easeInOutSine; loop: true; to: 1.35 1.35 1.35');
     marker.setAttribute('data-id', h.id);
+    marker.addEventListener('click', function(event) {
+      event.stopPropagation();
+      openPanel(h);
+    });
     wrap.appendChild(marker);
 
     var ring = document.createElement('a-entity');
@@ -587,29 +606,8 @@
     document.getElementById('info-panel').classList.add('hidden');
   });
 
-  // click handling from A-Frame
-  document.addEventListener('DOMContentLoaded', function(){
-    var scene = document.querySelector('a-scene');
-    scene.addEventListener('click', function(evt){
-      var el = evt.detail && evt.detail.intersectedEl ? evt.detail.intersectedEl : null;
-      if (el && el.getAttribute('data-id')){
-        var id = el.getAttribute('data-id');
-        var h = HOTSPOTS.filter(function(x){ return x.id === id; })[0];
-        if (h) openPanel(h);
-      }
-    });
-  });
-
-  // Fallback: attach per-entity click too (some A-Frame versions fire on element itself)
-  setTimeout(function(){
-    document.querySelectorAll('.hotspot').forEach(function(el){
-      el.addEventListener('click', function(){
-        var id = el.getAttribute('data-id');
-        var h = HOTSPOTS.filter(function(x){ return x.id === id; })[0];
-        if (h) openPanel(h);
-      });
-    });
-  }, 500);
+  // Each hotspot has one click handler attached when it is created above.
+  // A single event path prevents duplicate panels and duplicate click sounds.
 
   // ---- simple login (demo accounts, no backend) ----
   var USERS = {
@@ -635,8 +633,10 @@
     var err = document.getElementById('login-error');
     if (USERS[u] && USERS[u] === p){
       err.classList.remove('show');
-      if (document.getElementById('remember-me').checked){
+      if (document.getElementById('remember-me').checked) {
         try { localStorage.setItem('tt_user', u); } catch (e) {}
+      } else {
+        try { localStorage.removeItem('tt_user'); } catch (e) {}
       }
       showLoggedIn(u);
     } else {
@@ -708,7 +708,6 @@
   document.getElementById('results-btn').addEventListener('click', showResults);
   document.getElementById('close-results-btn').addEventListener('click', function(){
     document.getElementById('results-overlay').classList.add('hidden');
-    resultsShown = false;
   });
 
   document.getElementById('restart-btn').addEventListener('click', function(){
