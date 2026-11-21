@@ -92,7 +92,7 @@ Developed as part of the **Tech Titans — Cyber Awareness 360° enterprise proj
 
 - **Live experience:** [360-VR-](https://pyatrick666.github.io/360-VR-/)
 - **Source code:** [GitHub repository](https://github.com/pyatrick666/360-VR-)
-- **Developer portfolio:** [Pratik Poudel](https://pyatrick666.github.io/Professional-Portfolio/)
+- **Developer portfolio:** [Pratik Poudel](https://pratikpoudel.info.np/)
 
 <div align="center">
 
